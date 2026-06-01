@@ -1,54 +1,66 @@
 <?php
-require_once 'db.php';
-require_once 'jwt_helper.php';
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    sendResponse(["status" => "error", "message" => "Method Not Allowed"]);
-}
+require_once '../db.php';
+require_once '../jwt_helper.php';
 
 $user = requireAuth();
+$userId = $user['user_id'];
 
-$input = getJsonInput();
-$table_name = $input['table_name'] ?? null;
-$data = $input['data'] ?? null;
+// Android sends data via FormUrlEncoded/Post fields
+$type = $_POST['type'] ?? null;
+$jsonData = $_POST['data'] ?? null;
+$deviceId = $_POST['device_id'] ?? null;
 
-// Allowlist of tables
-$allowed_tables = ['officials', 'institutions', 'blood_donors', 'professionals', 'businesses', 'emergency_contacts', 'notices'];
-
-if (!$table_name || !in_array($table_name, $allowed_tables)) {
+if (!$type || !$jsonData) {
     http_response_code(400);
-    sendResponse(["status" => "error", "message" => "Invalid or missing table name"]);
-}
-
-if (!is_array($data) || empty($data)) {
-    http_response_code(400);
-    sendResponse(["status" => "error", "message" => "Invalid or missing data"]);
+    sendResponse(["status" => "error", "message" => "Missing type or data"]);
 }
 
 try {
     $conn->beginTransaction();
 
+    $data = json_decode($jsonData, true);
+    if (!$data) {
+        throw new Exception("Invalid JSON data");
+    }
+
+    // Insert into specific table based on type
+    $allowed_tables = [
+        'official' => 'officials',
+        'institution' => 'institutions',
+        'donor' => 'blood_donors',
+        'professional' => 'professionals',
+        'business' => 'businesses',
+        'tourism' => 'tourism_places',
+        'emergency' => 'emergency_contacts'
+    ];
+
+    $tableName = $allowed_tables[$type] ?? null;
+    if (!$tableName) {
+        throw new Exception("Invalid entry type: " . $type);
+    }
+
+    // Prepare dynamic query
+    $data['status'] = 'pending'; // All new entries are pending
+    if ($type == 'official') $data['created_by'] = $userId;
+    
     $columns = implode(", ", array_keys($data));
     $placeholders = implode(", ", array_fill(0, count($data), "?"));
     $values = array_values($data);
 
-    $sql = "INSERT INTO $table_name ($columns) VALUES ($placeholders)";
-    $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare("INSERT INTO $tableName ($columns) VALUES ($placeholders)");
     $stmt->execute($values);
-    
-    $item_id = $conn->lastInsertId();
+    $itemId = $conn->lastInsertId();
 
-    // Log contribution
-    $log_stmt = $conn->prepare("INSERT INTO contributions (user_id, item_type, item_id, action) VALUES (?, ?, ?, 'add')");
-    $log_stmt->execute([$user['user_id'], $table_name, $item_id]);
+    // Log in contributions table
+    $stmtLog = $conn->prepare("INSERT INTO contributions (user_id, item_type, item_id, action_type, status) VALUES (?, ?, ?, 'add', 'pending')");
+    $stmtLog->execute([$userId, $type, $itemId, 'add']);
 
     $conn->commit();
+    sendResponse(["status" => "success", "message" => "Entry submitted for approval"]);
 
-    sendResponse(["status" => "success", "message" => "Entry added successfully", "id" => $item_id]);
-
-} catch (PDOException $e) {
-    $conn->rollBack();
+} catch (Exception $e) {
+    if ($conn->inTransaction()) $conn->rollBack();
     http_response_code(500);
-    sendResponse(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+    sendResponse(["status" => "error", "message" => $e->getMessage()]);
 }
+?>
