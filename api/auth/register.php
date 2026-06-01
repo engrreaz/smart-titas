@@ -10,7 +10,6 @@ $name = $input['name'] ?? '';
 $phone = $input['phone'] ?? '';
 $email = $input['email'] ?? '';
 $password = $input['password'] ?? '';
-$device_id = $input['device_id'] ?? '';
 
 if (empty($name) || empty($phone) || empty($password)) {
     sendResponse(["status" => "error", "message" => "Name, phone, and password are required"]);
@@ -26,9 +25,9 @@ try {
 
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
-    // As per spec: INSERT INTO users (name, phone, password, email, role, device_id) VALUES (?, ?, ?, ?, 'contributor', ?)
-    $stmt = $conn->prepare("INSERT INTO users (name, phone, password, email, role, device_id) VALUES (?, ?, ?, ?, 'contributor', ?)");
-    $stmt->execute([$name, $phone, $hashed_password, $email, $device_id]);
+    // Insert without device_id as it's not in the Instruction.md SQL structure
+    $stmt = $conn->prepare("INSERT INTO users (name, phone, password, email, role, trust_score, level_name, status) VALUES (?, ?, ?, ?, 'contributor', 0, 'Bronze', 'active')");
+    $stmt->execute([$name, $phone, $hashed_password, $email]);
 
     sendResponse(["status" => "success", "message" => "User registered successfully"]);
 } catch (PDOException $e) {

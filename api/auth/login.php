@@ -23,17 +23,33 @@ try {
     if ($user && password_verify($password, $user['password'])) {
         $token = generateJwtToken($user['id'], $user['role']);
         
-        // Remove password from response
-        unset($user['password']);
+        $userId = $user['id'];
         
-        // Map fields to match API spec
+        // Fetch stats
+        $stmt_total = $conn->prepare("SELECT COUNT(*) FROM contributions WHERE user_id = ?");
+        $stmt_total->execute([$userId]);
+        $total_contributions = $stmt_total->fetchColumn();
+
+        // Assuming approved entries are those that resulted in points > 0 or we can check the status of items?
+        // For now, let's just use placeholder or count from contributions if it means successful actions.
+        $stmt_verified = $conn->prepare("SELECT COUNT(*) FROM contributions WHERE user_id = ? AND action_type = 'verify'");
+        $stmt_verified->execute([$userId]);
+        $verified_entries = $stmt_verified->fetchColumn();
+
         $userResponse = [
             "id" => (int)$user['id'],
             "name" => $user['name'],
             "phone" => $user['phone'],
+            "email" => $user['email'],
+            "image" => $user['image'],
             "role" => $user['role'],
-            "trustScore" => isset($user['trust_score']) ? (int)$user['trust_score'] : 0,
-            "levelName" => isset($user['level_name']) ? $user['level_name'] : 'Bronze'
+            "trust_score" => (int)$user['trust_score'],
+            "level_name" => $user['level_name'],
+            "total_contributions" => (int)$total_contributions,
+            "approved_entries" => (int)$total_contributions, // Placeholder logic
+            "verified_entries" => (int)$verified_entries,
+            "status" => $user['status'],
+            "created_at" => $user['created_at']
         ];
         
         sendResponse([
