@@ -5,7 +5,7 @@ require_once '../jwt_helper.php';
 $user = requireAuth();
 if ($user['role'] !== 'moderator' && $user['role'] !== 'super_admin') {
     http_response_code(403);
-    sendResponse(["status" => "error", "message" => "Unauthorized: Moderators only"]);
+    sendResponse(["status" => "error", "message" => "Unauthorized access"]);
 }
 
 $item_type = $_POST['item_type'] ?? null;
@@ -23,7 +23,6 @@ try {
 
     $status = ($action === 'approve') ? 'approved' : 'rejected';
     
-    // ১. সংশ্লিষ্ট টেবিল আপডেট (e.g., officials, businesses)
     $allowed_tables = [
         'official' => 'officials',
         'institution' => 'institutions',
@@ -35,31 +34,67 @@ try {
     ];
 
     $tableName = $allowed_tables[$item_type] ?? null;
-    if ($tableName) {
-        $stmt = $conn->prepare("UPDATE $tableName SET status = ? WHERE id = ?");
-        $stmt->execute([$status, $item_id]);
+
+    // Check if this is an Edit Request or a New Entry
+    $stmtCheck = $conn->prepare("SELECT action_type, user_id FROM contributions WHERE item_type = ? AND item_id = ? AND status = 'pending' LIMIT 1");
+    $stmtCheck->execute([$item_type, $item_id]);
+    $contribution = $stmtCheck->fetch();
+
+    if (!$contribution) {
+        throw new Exception("Contribution record not found or already processed.");
     }
 
-    // ২. contributions টেবিল আপডেট
-    $stmtLog = $conn->prepare("UPDATE contributions SET status = ? WHERE item_type = ? AND item_id = ?");
-    $stmtLog->execute([$status, $item_type, $item_id]);
+    $actionType = $contribution['action_type'];
+    $contributorId = $contribution['user_id'];
 
-    // ৩. পয়েন্ট যোগ করা (যদি অ্যাপ্রুভ হয়)
-    if ($action === 'approve') {
-        // কন্ট্রিবিউটর আইডি বের করা
-        $stmtContrib = $conn->prepare("SELECT user_id FROM contributions WHERE item_type = ? AND item_id = ?");
-        $stmtContrib->execute([$item_type, $item_id]);
-        $contributorId = $stmtContrib->fetchColumn();
+    if ($actionType === 'edit') {
+        // Handle Edit Request
+        if ($action === 'approve') {
+            $stmtEdit = $conn->prepare("SELECT changes FROM edit_requests WHERE item_type = ? AND item_id = ? AND status = 'pending' LIMIT 1");
+            $stmtEdit->execute([$item_type, $item_id]);
+            $editRequest = $stmtEdit->fetch();
 
-        if ($contributorId) {
-            $points = 10; // ডিফল্ট ১০ পয়েন্ট
-            $stmtPoints = $conn->prepare("UPDATE users SET trust_score = trust_score + ? WHERE id = ?");
-            $stmtPoints->execute([$points, $contributorId]);
+            if ($editRequest) {
+                $changes = json_decode($editRequest['changes'], true);
+                if ($changes && $tableName) {
+                    $setClauses = [];
+                    $params = [];
+                    foreach ($changes as $key => $value) {
+                        $setClauses[] = "$key = ?";
+                        $params[] = $value;
+                    }
+                    $params[] = $item_id;
+                    $updateSql = "UPDATE $tableName SET " . implode(", ", $setClauses) . " WHERE id = ?";
+                    $stmtUpdate = $conn->prepare($updateSql);
+                    $stmtUpdate->execute($params);
+                }
+            }
+        }
+        // Update edit_requests table
+        $stmtUpdateEdit = $conn->prepare("UPDATE edit_requests SET status = ? WHERE item_type = ? AND item_id = ? AND status = 'pending'");
+        $stmtUpdateEdit->execute([$status, $item_type, $item_id]);
+
+    } else {
+        // Handle New Entry (Add)
+        if ($tableName) {
+            $stmtUpdateItem = $conn->prepare("UPDATE $tableName SET status = ? WHERE id = ?");
+            $stmtUpdateItem->execute([$status, $item_id]);
         }
     }
 
+    // Update contributions table status
+    $stmtLog = $conn->prepare("UPDATE contributions SET status = ? WHERE item_type = ? AND item_id = ? AND status = 'pending'");
+    $stmtLog->execute([$status, $item_type, $item_id]);
+
+    // Award Points for Approval
+    if ($action === 'approve') {
+        $points = ($actionType === 'edit') ? 5 : 10;
+        $stmtPoints = $conn->prepare("UPDATE users SET trust_score = trust_score + ?, total_contributions = total_contributions + 1 WHERE id = ?");
+        $stmtPoints->execute([$points, $contributorId]);
+    }
+
     $conn->commit();
-    sendResponse(["status" => "success", "message" => "Item " . $status . " successfully"]);
+    sendResponse(["status" => "success", "message" => "Item successfully " . $status]);
 
 } catch (Exception $e) {
     if ($conn->inTransaction()) $conn->rollBack();
