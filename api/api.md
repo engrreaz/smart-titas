@@ -1,111 +1,94 @@
-# Smart Titas - Backend API Documentation
+# Smart Titas - Backend API Specification (Final Comprehensive Guide)
 
-**Base URL:** `https://smarttitas.eimbox.com/api`
-
-## General Guidelines
-- All requests should be `POST`.
-- Response format: `JSON`.
-- Authentication: Use JWT (JSON Web Token) for protected routes.
-- Success Response: `{"status": "success", "data": ...}`
-- Error Response: `{"status": "error", "message": "Reason for failure"}`
+**Base URL:** `https://smarttitas.eimbox.com/api/`
 
 ---
 
-## 1. Authentication
+## 1. Authentication APIs (`auth/`)
 
-### `login.php`
-- **Description:** Authenticate user and return JWT.
-- **Params:** `phone`, `password`
-- **Response:** `{"status": "success", "token": "JWT_TOKEN", "user": {id, name, role, ...}}`
-- **SQL:** `SELECT * FROM users WHERE phone = ?`
+### A. Login (`auth/login.php`)
+- **Method:** `POST`
+- **Parameters:** `phone`, `password`, `device_id`
+- **Query:** `SELECT * FROM users WHERE phone = ?` (Verify hashed password in PHP)
+- **Response:**
+```json
+{
+  "status": "success",
+  "token": "JWT_TOKEN",
+  "user": { "id": 1, "name": "User Name", "phone": "01700000000", "role": "contributor", "trustScore": 10, "levelName": "Bronze" }
+}
+```
 
-### `register.php`
-- **Description:** Create a new contributor account.
-- **Params:** `name`, `phone`, `email`, `password`
-- **Response:** `{"status": "success", "message": "User registered"}`
-- **SQL:** `INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, 'contributor')`
-
-### `profile.php`
-- **Description:** Get user details and contribution stats.
-- **Params:** `user_id`
-- **Headers:** `Authorization: Bearer <token>`
-- **SQL:** 
-    - `SELECT * FROM users WHERE id = ?`
-    - `SELECT COUNT(*) as total_contributions FROM contributions WHERE user_id = ?`
-
----
-
-## 2. Directories (Fetch Data)
-*Note: All fetch APIs should return an array of objects.*
-
-### `officials.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM officials ORDER BY designation ASC`
-
-### `institutions.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM institutions`
-
-### `donors.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM blood_donors WHERE available = 1`
-
-### `professionals.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM professionals`
-
-### `businesses.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM businesses`
-
-### `emergency.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM emergency_contacts`
-
-### `notices.php`
-- **Params:** `action='list'`
-- **SQL:** `SELECT * FROM notices ORDER BY created_at DESC`
+### B. Register (`auth/register.php`)
+- **Method:** `POST`
+- **Parameters:** `name`, `phone`, `password`, `email`, `device_id`
+- **Query:** `INSERT INTO users (name, phone, password, email, role, device_id) VALUES (?, ?, ?, ?, 'contributor', ?)`
+- **Response:** `{"status": "success", "message": "User registered successfully"}`
 
 ---
 
-## 3. Contribution System (Protected)
-*All these require JWT in Header: `Authorization: Bearer <token>`*
+## 2. Data Synchronization APIs (`data/`)
+*All categories follow Delta Sync using `last_sync` (UNIX Timestamp).*
+*Only records with `status = 'approved'` should be returned.*
 
-### `add_entry.php`
-- **Params:** `table_name`, `data` (JSON object)
-- **Action:** Insert into specified table and log into `contributions` table.
-- **Example Data:** `{"name": "...", "phone": "...", "designation": "..."}`
-
-### `edit_request.php`
-- **Params:** `item_type` (e.g., 'officials'), `item_id`, `changes` (JSON object)
-- **Action:** Insert into `edit_requests` table for moderator approval.
-
-### `verify.php`
-- **Params:** `item_type`, `item_id`, `verification_level`
-- **Action:** (Moderator only) Update `verification_level` in the target table and log in `verification_logs`.
-
-### `report.php`
-- **Params:** `item_type`, `item_id`, `reason`
-- **Action:** Log entry in `reports` table.
-
----
-
-## 4. Search & Sync
-
-### `search.php`
-- **Params:** `query`
-- **Action:** Search across all directory tables.
-- **SQL Example:** `SELECT 'official' as type, name, phone FROM officials WHERE name LIKE %?% UNION ...`
-
-### `sync.php`
-- **Params:** `last_sync_timestamp`
-- **Action:** Return all records updated/created after the given timestamp across all tables. This is crucial for the offline-first approach.
+- **Endpoints:** `officials.php`, `institutions.php`, `donors.php`, `professionals.php`, `businesses.php`, `emergency.php`, `notices.php`, `tourism.php`.
+- **Method:** `POST`
+- **Parameters:** `last_sync` (Integer)
+- **Common Logic:** `SELECT * FROM table_name WHERE UNIX_TIMESTAMP(updated_at) > ? AND status = 'approved'`
+- **Sample Response (officials.php):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Rahim Uddin",
+    "designation": "UNO",
+    "institution": "Upazila Parishad",
+    "phone": "017XXXXXXXX",
+    "verificationLevel": "official",
+    "updated_at": "2023-10-01 12:00:00"
+  }
+]
+```
 
 ---
 
-## Manual Instructions for Backend Developer
-1. **Password Security:** Use `password_hash()` with `PASSWORD_DEFAULT`.
-2. **JWT Secret:** Use a strong secret key for token generation.
-3. **CORS:** Ensure `Access-Control-Allow-Origin: *` is set for development.
-4. **Database Character Set:** Ensure `utf8mb4` is used for Bengali support.
-5. **JSON Handling:** Use `json_decode(file_get_contents('php://input'), true)` to read JSON POST data.
+## 3. Action & Moderation APIs (`action/`)
+
+### A. Add Entry (`action/add_entry.php`)
+- **Method:** `POST`
+- **Header:** `Authorization: Bearer <token>`
+- **Parameters:** `type` (official|institution|donor|etc), `data` (JSON String), `device_id`
+- **Query:** `INSERT INTO [table_name] (field1, field2, ..., status) VALUES (?, ?, ..., 'pending')`
+- **Response:** `{"status": "success", "message": "Entry submitted for moderation"}`
+
+### B. Moderate Item (`action/moderate.php`)
+- **Method:** `POST`
+- **Header:** `Authorization: Bearer <token>`
+- **Restriction:** Role must be `moderator` or `super_admin`.
+- **Parameters:** `item_type`, `item_id`, `action` (approve|reject)
+- **Query:** `UPDATE [table_name] SET status = ? WHERE id = ?`
+- **Point System Logic (PHP):** 
+  - If `action == 'approve'`, Update user's `trust_score`: `UPDATE users SET trust_score = trust_score + 10 WHERE id = (SELECT created_by FROM [table] WHERE id = ?)`
+
+### C. Verify Item (`action/verify.php`)
+- **Method:** `POST`
+- **Header:** `Authorization: Bearer <token>`
+- **Parameters:** `item_type`, `item_id`, `level` (community|moderator|official|trusted)
+- **Query:** `UPDATE [table_name] SET verification_level = ? WHERE id = ?`
+
+---
+
+## 4. Manual Instructions for Backend Developer
+
+### Database Table Changes:
+1. **`status` Column:** প্রতিটি ডাটা টেবিলে (officials, institutions, etc.) একটি `status` কলাম যোগ করুন: `ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'`.
+2. **`updated_at` Column:** ডেল্টা সিঙ্কের জন্য `updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` কলামটি নিশ্চিত করুন।
+3. **`uploads/` Folder:** রুট ডিরেক্টরিতে `uploads/` ফোল্ডার তৈরি করুন এবং `775` পারমিশন দিন। ইমেজ গুলো `https://smarttitas.eimbox.com/uploads/` পাথ থেকে এক্সেসযোগ্য হবে।
+
+### Security:
+1. **JWT Secret:** একটি শক্তিশালী সিক্রেট কি ব্যবহার করুন।
+2. **Rate Limiting:** প্রতি ডিভাইসে দিনে সর্বোচ্চ ১০টি নতুন এন্ট্রি বা ২০টি এডিট রিকোয়েস্ট সীমাবদ্ধ করুন।
+3. **FCM:** নতুন কোনো নোটিশ (`notice`) পাবলিশ হলে অটোমেটিক পুশ নোটিফিকেশন ট্রিগার করুন।
+
+---
+*এই ডকুমেন্টেশন অনুযায়ী ব্যাকএন্ড ডেভেলপমেন্ট সম্পন্ন করলে অ্যাপটি পুরোপুরি লাইভ ব্যবহারের উপযোগী হবে।*

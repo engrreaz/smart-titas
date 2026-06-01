@@ -1,6 +1,6 @@
 <?php
-require_once 'db.php';
-require_once 'jwt_helper.php';
+require_once '../db.php';
+require_once '../jwt_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendResponse(["status" => "error", "message" => "Only POST method is allowed"]);
@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = getJsonInput();
 $phone = $input['phone'] ?? '';
 $password = $input['password'] ?? '';
+$device_id = $input['device_id'] ?? '';
 
 if (empty($phone) || empty($password)) {
     sendResponse(["status" => "error", "message" => "Phone and password are required"]);
@@ -25,10 +26,20 @@ try {
         // Remove password from response
         unset($user['password']);
         
+        // Map fields to match API spec
+        $userResponse = [
+            "id" => (int)$user['id'],
+            "name" => $user['name'],
+            "phone" => $user['phone'],
+            "role" => $user['role'],
+            "trustScore" => isset($user['trust_score']) ? (int)$user['trust_score'] : 0,
+            "levelName" => isset($user['level_name']) ? $user['level_name'] : 'Bronze'
+        ];
+        
         sendResponse([
             "status" => "success",
             "token" => $token,
-            "user" => $user
+            "user" => $userResponse
         ]);
     } else {
         sendResponse(["status" => "error", "message" => "Invalid credentials"]);
