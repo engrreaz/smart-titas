@@ -13,6 +13,7 @@ $item_id = $_POST['item_id'] ?? null;
 $action = $_POST['action'] ?? null; // 'approve' or 'reject'
 $deviceId = $_POST['device_id'] ?? null;
 
+
 if (!$item_type || !$item_id || !$action) {
     http_response_code(400);
     sendResponse(["status" => "error", "message" => "Missing parameters"]);
@@ -20,7 +21,7 @@ if (!$item_type || !$item_id || !$action) {
 
 $dt = $item_type . ": " . $item_id . ", Action: " . $action . ", Device ID: " . $deviceId;
 
-
+error_log(json_decode($dt) ? "Valid JSON in changes" : "Invalid JSON in changes");
 try {
     $conn->beginTransaction();
 
