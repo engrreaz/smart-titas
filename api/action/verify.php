@@ -23,6 +23,9 @@ $d = $item_type . ", " . $item_id . ", " . $verification_level;
 //  sendResponse(["status" => "error", "message" => "Invalid or missing parameters"]);
 //  exit;
 
+error_log(json_decode($d) ? "Valid JSON in input" : "Invalid JSON in input");
+
+
 $allowed_tables = ['officials', 'institutions', 'blood_donors', 'professionals', 'businesses', 'emergency_contacts', 'notices'];
 
 if (!$item_type || !in_array($item_type, $allowed_tables) || !$item_id || $verification_level === null) {
