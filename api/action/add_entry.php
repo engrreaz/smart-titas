@@ -10,6 +10,11 @@ $type = $_POST['type'] ?? null;
 $jsonData = $_POST['data'] ?? null;
 $deviceId = $_POST['device_id'] ?? null;
 
+
+$jd = json_decode($jsonData, true);
+$jdd = implode(", ", array_keys($jd));
+$allData = $type . ": " . $jdd . ", Device ID: " . $deviceId;
+
 if (!$type || !$jsonData) {
     http_response_code(400);
     sendResponse(["status" => "error", "message" => "Missing type or data"]);
@@ -61,6 +66,6 @@ try {
 } catch (Exception $e) {
     if ($conn->inTransaction()) $conn->rollBack();
     http_response_code(500);
-    sendResponse(["status" => "error", "message" => $e->getMessage()]);
+    sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' .$allData]);
 }
 ?>
