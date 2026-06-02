@@ -280,7 +280,7 @@ $total_members_count = array_sum(array_column($friends, 'total_member'));
                                     <p class="card-text mb-0" style="font-size: 0.85rem;">
                                         <i class="bi bi-people text-muted me-1"></i> সদস্য: <strong><?= htmlspecialchars($friend['total_member']) ?></strong>
                                     </p>
-                                    <span class="badge rounded-pill" style="background-color: #006874; font-weight: 500; font-size: 0.75rem;"><i class="bi bi-pin-map-fill"></i> <?= htmlspecialchars($friend['pick_point']) ?></span>
+                                    <span class="badge rounded-pill" style="background-color: #006874; font-weight: 500; font-size: 0.65rem;"><i class="bi bi-pin-map-fill"></i> <?= htmlspecialchars($friend['pick_point']) ?></span>
                                 </div>
                             </div>
                         </div>
