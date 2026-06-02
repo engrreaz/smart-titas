@@ -19,8 +19,7 @@ if (!$item_type || !$item_id || !$action) {
 }
 
 $dt = $item_type . ": " . $item_id . ", Action: " . $action . ", Device ID: " . $deviceId;
-sendResponse(["status" => "error", "message" => $dt]);
-exit;
+
 
 try {
     $conn->beginTransaction();
@@ -54,7 +53,7 @@ try {
     if ($actionType === 'edit') {
         // Handle Edit Request
         if ($action === 'approve') {
-            $stmtEdit = $conn->prepare("SELECT changes FROM edit_requests WHERE item_type = ? AND item_id = ? AND status = 'pending' LIMIT 1");
+            $stmtEdit = $conn->prepare("SELECT changes FROM edit_requests WHERE item_type = ? AND id = ? AND status = 'pending' LIMIT 1");
             $stmtEdit->execute([$item_type, $item_id]);
             $editRequest = $stmtEdit->fetch();
 
