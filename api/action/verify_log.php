@@ -51,42 +51,29 @@ if (!in_array($status, $allowed_status)) {
 
 // SQL
 $sql = "INSERT INTO verification_logs 
-        (user_id, item_type, item_id, status, device_id) 
+        (user_id, item_type, item_id, verify_val, device_id) 
         VALUES (?, ?, ?, ?, ?)";
 
-$stmt = $conn->prepare($sql);
+try {
+    $stmt = $conn->prepare($sql);
 
-if (!$stmt) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "DB prepare failed",
-        "debug" => $conn->error
-    ]);
-    exit;
-}
-
-// bind types: i = int, s = string
-$stmt->bind_param(
-    "isiss",
-    $user_id,
-    $type,
-    $item_id,
-    $status,
-    $device_id
-);
-
-if ($stmt->execute()) {
-    echo json_encode([
-        "status" => "success",
-        "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
-    ]);
-} else {
+    if ($stmt->execute([$user_id, $type, $item_id, $status, $device_id])) {
+        echo json_encode([
+            "status" => "success",
+            "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
+        ]);
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Database error",
+            "debug" => $stmt->errorInfo()
+        ]);
+    }
+} catch (PDOException $e) {
     echo json_encode([
         "status" => "error",
         "message" => "Database error",
-        "debug" => $stmt->error
+        "debug" => $e->getMessage()
     ]);
 }
-
-$stmt->close();
 ?>
