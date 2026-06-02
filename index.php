@@ -54,6 +54,9 @@ $query .= " ORDER BY friend_name ASC";
 $stmt = $conn->prepare($query);
 $stmt->execute($params);
 $friends = $stmt->fetchAll();
+
+$total_friends_count = count($friends);
+$total_members_count = array_sum(array_column($friends, 'total_member'));
 ?>
 <!DOCTYPE html>
 <html lang="bn">
@@ -228,12 +231,28 @@ $friends = $stmt->fetchAll();
 
     <div class="container">
         <!-- Filter Options -->
-        <div class="d-flex flex-wrap justify-content-center filter-nav mb-4">
+        <div class="d-flex flex-wrap justify-content-center filter-nav mb-3">
             <?php foreach($points as $point): ?>
-                <a href="?pick_point=<?= urlencode($point) ?>" class="nav-link text-decoration-none <?= $filter_pick_point == $point ? 'active' : '' ?>" style="font-size:9px;">
+                <a href="?pick_point=<?= urlencode($point) ?>" class="nav-link text-decoration-none <?= $filter_pick_point == $point ? 'active' : '' ?>">
                     <?= $point ?>
                 </a>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card card-tonal" style="background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);">
+                    <div class="card-body py-2 px-3 d-flex justify-content-around align-items-center">
+                        <span class="fw-bold fs-6">
+                            <i class="bi bi-people-fill me-1" style="color: var(--md-sys-color-primary);"></i> মোট বন্ধু: <?= $total_friends_count ?>
+                        </span>
+                        <span class="fw-bold fs-6">
+                            <i class="bi bi-person-lines-fill me-1" style="color: var(--md-sys-color-primary);"></i> মোট সদস্য: <?= $total_members_count ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Cards Grid -->
