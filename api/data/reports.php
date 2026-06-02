@@ -5,6 +5,9 @@ require_once '../jwt_helper.php';
 $user = requireAuth();
 $auth_role = $user['role'] ?? '';
 
+error_log("User ID: " . ($user['user_id'] ?? 'unknown') . ", Role: $auth_role accessed reports.php");
+
+
 // শুধুমাত্র অ্যাডমিন বা সুপার অ্যাডমিন চেক
 if ($auth_role !== 'admin' && $auth_role !== 'super_admin' && $auth_role !== 'moderator') {
     die(json_encode(["status" => "error", "message" => "Unauthorized"]));
