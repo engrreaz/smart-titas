@@ -4,14 +4,14 @@ require_once '../jwt_helper.php';
 
 // লগ যাতে দেখা যায় ফাইলটি আদৌ হিট করছে কি না
 error_log("verify.php triggered at " . date('Y-m-d H:i:s'));
-  sendResponse(["status" => "success", "message" => "Method Not Allowed"]);
-  exit;
+
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     sendResponse(["status" => "error", "message" => "Method Not Allowed"]);
 }
 
+error_log("Request method is POST, proceeding with verification logic.");
 $user = requireAuth();
 
 // Role check - allow admin, super_admin, and moderator
@@ -20,7 +20,7 @@ if (!in_array($user['role'], $allowed_roles)) {
     http_response_code(403);
     sendResponse(["status" => "error", "message" => "Forbidden: Unauthorized role"]);
 }
-
+error_log("User authenticated with role: " . $user['role']);
 $input = getJsonInput() ?: [];
 
 // অ্যাপের প্যারামিটার অনুযায়ী ডেটা রিসিভ
