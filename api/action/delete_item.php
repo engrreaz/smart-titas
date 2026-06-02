@@ -2,6 +2,9 @@
 require_once '../db.php';
 require_once '../jwt_helper.php';
 
+$user = requireAuth();
+$auth_role = $user['role'] ?? '';
+
 // শুধুমাত্র অ্যাডমিন বা সুপার অ্যাডমিন চেক
 if ($auth_role !== 'admin' && $auth_role !== 'super_admin') {
     die(json_encode(["status" => "error", "message" => "Unauthorized access"]));
@@ -10,7 +13,7 @@ if ($auth_role !== 'admin' && $auth_role !== 'super_admin') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = $_POST['type'];
     $item_id = $_POST['item_id'];
-    $device_id = $_POST['device_id'];
+    $device_id = $_POST['device_id'] ?? '';
 
     // টেবিল নাম নির্ধারণ (ম্যাপিং)
     $table_mapping = [
@@ -28,22 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $table = $table_mapping[$type];
         
         // ট্রানজ্যাকশন শুরু (নিরাপত্তার জন্য)
-        $conn->begin_transaction();
+        $conn->beginTransaction();
         try {
             // ১. আইটেমটি ডিলিট করা
             $stmt = $conn->prepare("DELETE FROM $table WHERE id = ?");
-            $stmt->bind_param("i", $item_id);
-            $stmt->execute();
+            $stmt->execute([$item_id]);
 
             // ২. সংশ্লিষ্ট রিপোর্টগুলো ডিলিট করা
             $stmt_rep = $conn->prepare("DELETE FROM reports WHERE item_type = ? AND item_id = ?");
-            $stmt_rep->bind_param("si", $type, $item_id);
-            $stmt_rep->execute();
+            $stmt_rep->execute([$type, $item_id]);
 
             $conn->commit();
             echo json_encode(["status" => "success", "message" => "সফলভাবে মুছে ফেলা হয়েছে।"]);
         } catch (Exception $e) {
-            $conn->rollback();
+            $conn->rollBack();
             echo json_encode(["status" => "error", "message" => "মুছে ফেলা সম্ভব হয়নি। " . $e->getMessage()]);
         }
     } else {
