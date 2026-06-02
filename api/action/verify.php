@@ -19,6 +19,9 @@ $input = getJsonInput();
 $item_type = $input['item_type'] ?? null;
 $item_id = $input['item_id'] ?? null;
 $verification_level = $input['verification_level'] ?? null;
+$d = $item_type . ", " . $item_id . ", " . $verification_level;
+ sendResponse(["status" => "error", "message" => "Invalid or missing parameters"]);
+ exit;
 
 $allowed_tables = ['officials', 'institutions', 'blood_donors', 'professionals', 'businesses', 'emergency_contacts', 'notices'];
 
