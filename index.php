@@ -1,5 +1,5 @@
 <?php
-require_once 'api/db.php';
+require_once '../db.php';
 // Override the JSON content type set by db.php
 header('Content-Type: text/html; charset=utf-8');
 
@@ -63,7 +63,9 @@ $friends = $stmt->fetchAll();
     <title>ফ্রেন্ডস ম্যানেজমেন্ট</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --md-sys-color-primary: #006874;
@@ -80,7 +82,7 @@ $friends = $stmt->fetchAll();
         body {
             background-color: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Noto Sans Bengali', sans-serif;
             padding-bottom: 5rem;
         }
         
@@ -235,32 +237,31 @@ $friends = $stmt->fetchAll();
         </div>
 
         <!-- Cards Grid -->
-        <div class="row g-4">
+        <div class="row g-3">
             <?php if(count($friends) > 0): ?>
                 <?php foreach($friends as $friend): ?>
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="card card-tonal p-2">
-                            <div class="card-body">
-                                <h5 class="card-title fw-bold mb-3">
-                                    <i class="bi bi-person-circle" style="color: #006874;"></i> <?= htmlspecialchars($friend['friend_name']) ?>
-                                </h5>
-                                <p class="card-text mb-2">
-                                    <i class="bi bi-telephone-fill text-muted me-2"></i> <?= htmlspecialchars($friend['mobile_no']) ?>
-                                </p>
-                                <p class="card-text mb-2">
-                                    <i class="bi bi-geo-alt-fill text-muted me-2"></i> <?= htmlspecialchars($friend['address']) ?>
-                                </p>
-                                <p class="card-text mb-2">
-                                    <i class="bi bi-people text-muted me-2"></i> মোট সদস্য: <strong><?= htmlspecialchars($friend['total_member']) ?></strong>
-                                </p>
-                                <p class="card-text mb-4">
-                                    <i class="bi bi-pin-map-fill text-muted me-2"></i> পিক পয়েন্ট: <span class="badge rounded-pill" style="background-color: #006874;"><?= htmlspecialchars($friend['pick_point']) ?></span>
-                                </p>
-                                
-                                <div class="text-end mt-auto">
-                                    <button type="button" class="btn btn-sm btn-tonal" onclick='editFriend(<?= json_encode($friend, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
-                                        <i class="bi bi-pencil-square"></i> এডিট করুন
+                        <div class="card card-tonal">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title fw-bold mb-0">
+                                        <i class="bi bi-person-circle" style="color: #006874;"></i> <?= htmlspecialchars($friend['friend_name']) ?>
+                                    </h6>
+                                    <button type="button" class="btn btn-sm btn-tonal py-0 px-2" style="font-size: 0.75rem;" onclick='editFriend(<?= json_encode($friend, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                        <i class="bi bi-pencil-square"></i>
                                     </button>
+                                </div>
+                                <p class="card-text mb-1" style="font-size: 0.85rem;">
+                                    <i class="bi bi-telephone-fill text-muted me-1"></i> <?= htmlspecialchars($friend['mobile_no']) ?>
+                                </p>
+                                <p class="card-text mb-1" style="font-size: 0.85rem;">
+                                    <i class="bi bi-geo-alt-fill text-muted me-1"></i> <?= htmlspecialchars($friend['address']) ?>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
+                                    <p class="card-text mb-0" style="font-size: 0.85rem;">
+                                        <i class="bi bi-people text-muted me-1"></i> সদস্য: <strong><?= htmlspecialchars($friend['total_member']) ?></strong>
+                                    </p>
+                                    <span class="badge rounded-pill" style="background-color: #006874; font-weight: 500; font-size: 0.75rem;"><i class="bi bi-pin-map-fill"></i> <?= htmlspecialchars($friend['pick_point']) ?></span>
                                 </div>
                             </div>
                         </div>
