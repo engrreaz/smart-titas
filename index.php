@@ -1,5 +1,5 @@
 <?php
-require_once '../db.php';
+require_once 'api/db.php';
 // Override the JSON content type set by db.php
 header('Content-Type: text/html; charset=utf-8');
 
