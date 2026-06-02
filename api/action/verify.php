@@ -3,15 +3,13 @@ require_once '../db.php';
 require_once '../jwt_helper.php';
 
 // লগ যাতে দেখা যায় ফাইলটি আদৌ হিট করছে কি না
-error_log("verify.php triggered at " . date('Y-m-d H:i:s'));
-
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     sendResponse(["status" => "error", "message" => "Method Not Allowed"]);
 }
 
-error_log("Request method is POST, proceeding with verification logic.");
+
 $user = requireAuth();
 
 // Role check - allow admin, super_admin, and moderator
@@ -20,7 +18,7 @@ if (!in_array($user['role'], $allowed_roles)) {
     http_response_code(403);
     sendResponse(["status" => "error", "message" => "Forbidden: Unauthorized role"]);
 }
-error_log("User authenticated with role: " . $user['role']);
+
 $input = getJsonInput() ?: [];
 
 // অ্যাপের প্যারামিটার অনুযায়ী ডেটা রিসিভ
@@ -28,7 +26,7 @@ $item_type = $_POST['type'] ?? $input['type'] ?? $input['item_type'] ?? null;
 $item_id = $_POST['item_id'] ?? $input['item_id'] ?? null;
 $verification_level = $_POST['level'] ?? $input['level'] ?? $input['verification_level'] ?? null;
 
-error_log("Data received: type=$item_type, id=$item_id, level=$verification_level");
+
 
 // অ্যাপের সিঙ্গুলার টাইপ থেকে ডাটাবেস টেবিল ম্যাপিং
 $type_map = [
@@ -60,7 +58,7 @@ try {
     // Insert into verification_logs for history
     $log_stmt = $conn->prepare("INSERT INTO verification_logs (user_id, item_type, item_id, verification_level) VALUES (?, ?, ?, ?)");
     $log_stmt->execute([$user['user_id'], $item_type, $item_id, $verification_level]);
-
+error_log("Verification updated: User ID: {$user['user_id']}, Item Type: $item_type, Item ID: $item_id, Level: $verification_level");
     $conn->commit();
     sendResponse(["status" => "success", "message" => "ভেরিফিকেশন লেভেল সফলভাবে আপডেট করা হয়েছে।"]);
 
