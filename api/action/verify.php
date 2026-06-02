@@ -1,6 +1,6 @@
 <?php
-require_once 'db.php';
-require_once 'jwt_helper.php';
+require_once '../db.php';
+require_once '../jwt_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
