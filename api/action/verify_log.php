@@ -51,7 +51,7 @@ if (!in_array($status, $allowed_status)) {
 
 // SQL
 $sql = "INSERT INTO verification_logs 
-        (user_id, item_type, item_id, verify_val, device_id) 
+        (verified_by, item_type, item_id, verify_val, device_id) 
         VALUES (?, ?, ?, ?, ?)";
 
 try {
