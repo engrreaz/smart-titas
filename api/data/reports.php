@@ -2,7 +2,8 @@
 require_once '../db.php';
 require_once '../jwt_helper.php';
 
-include_once '../auth/check_token.php';
+$user = requireAuth();
+$auth_role = $user['role'] ?? '';
 
 // শুধুমাত্র অ্যাডমিন বা সুপার অ্যাডমিন চেক
 if ($auth_role !== 'admin' && $auth_role !== 'super_admin' && $auth_role !== 'moderator') {
@@ -16,7 +17,7 @@ $sql = "SELECT r.id, r.item_type as type, r.item_id, r.reason, r.timestamp, u.na
 $result = $conn->query($sql);
 
 $reports = [];
-while($row = $result->fetch_assoc()) {
+while($row = $result->fetch(PDO::FETCH_ASSOC)) {
     $type = $row['type'];
     $iid = $row['item_id'];
     
@@ -34,12 +35,21 @@ while($row = $result->fetch_assoc()) {
 
     if (isset($table_mapping[$type])) {
         $table = $table_mapping[$type];
-        $name_res = $conn->query("SELECT name FROM $table WHERE id = $iid");
-        // Notices don't have 'name' column, they have 'title'
+        
+        $item_sql = "SELECT name FROM $table WHERE id = ?";
         if ($type === "notice") {
-             $name_res = $conn->query("SELECT title as name FROM notices WHERE id = $iid");
+             $item_sql = "SELECT title as name FROM notices WHERE id = ?";
         }
-        $row['item_name'] = ($name_res && $name_res->num_rows > 0) ? $name_res->fetch_assoc()['name'] : "Unknown Item";
+        
+        $stmt = $conn->prepare($item_sql);
+        $stmt->execute([$iid]);
+        
+        if ($stmt->rowCount() > 0) {
+            $item_row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row['item_name'] = $item_row['name'];
+        } else {
+            $row['item_name'] = "Unknown Item";
+        }
     } else {
         $row['item_name'] = "Unknown Type";
     }
