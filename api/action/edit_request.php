@@ -16,6 +16,9 @@ if (!$type || !$itemId || !$changesJson) {
     sendResponse(["status" => "error", "message" => "Missing required parameters"]);
 }
 
+$dd = $type . ' | ' . $itemId . ' | ' . $changesJson;
+error_log("Edit Request Data: " . $dd);
+
 try {
     // Validate if JSON is valid
     if (!json_decode($changesJson)) {
