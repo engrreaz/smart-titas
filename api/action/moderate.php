@@ -18,11 +18,15 @@ if (!$item_type || !$item_id || !$action) {
     sendResponse(["status" => "error", "message" => "Missing parameters"]);
 }
 
+$dt = $item_type . ": " . $item_id . ", Action: " . $action . ", Device ID: " . $deviceId;
+sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' . $dt]);
+exit;
+
 try {
     $conn->beginTransaction();
 
     $status = ($action === 'approve') ? 'approved' : 'rejected';
-    
+
     $allowed_tables = [
         'official' => 'officials',
         'institution' => 'institutions',
@@ -97,8 +101,9 @@ try {
     sendResponse(["status" => "success", "message" => "Item successfully " . $status]);
 
 } catch (Exception $e) {
-    if ($conn->inTransaction()) $conn->rollBack();
+    if ($conn->inTransaction())
+        $conn->rollBack();
     http_response_code(500);
-    sendResponse(["status" => "error", "message" => $e->getMessage()]);
+    sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' . $dt]);
 }
 ?>

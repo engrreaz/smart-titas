@@ -15,6 +15,7 @@ $jd = json_decode($jsonData, true);
 $jdd = implode(", ", array_keys($jd));
 $allData = $type . ": " . $jdd . ", Device ID: " . $deviceId;
 
+
 if (!$type || !$jsonData) {
     http_response_code(400);
     sendResponse(["status" => "error", "message" => "Missing type or data"]);
