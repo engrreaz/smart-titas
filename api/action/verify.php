@@ -12,10 +12,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $user = requireAuth();
 
-// Role check
-if ($user['role'] !== 'moderator' && $user['role'] !== 'admin') {
+// Role check - allow admin, super_admin, and moderator
+$allowed_roles = ['moderator', 'admin', 'super_admin'];
+if (!in_array($user['role'], $allowed_roles)) {
     http_response_code(403);
-    sendResponse(["status" => "error", "message" => "Forbidden: Moderators only"]);
+    sendResponse(["status" => "error", "message" => "Forbidden: Unauthorized role"]);
 }
 
 $input = getJsonInput() ?: [];
@@ -44,7 +45,7 @@ $allowed_tables = ['officials', 'institutions', 'blood_donors', 'professionals',
 
 if (!$item_type || !in_array($item_type, $allowed_tables) || !$item_id || $verification_level === null) {
     http_response_code(400);
-    sendResponse(["status" => "error", "message" => "Invalid parameters. Type: $item_type, ID: $item_id"]);
+    sendResponse(["status" => "error", "message" => "Invalid parameters. Type: $item_type, ID: $item_id, Level: $verification_level"]);
 }
 
 try {
@@ -54,11 +55,12 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute([$verification_level, $item_id]);
 
+    // Insert into verification_logs for history
     $log_stmt = $conn->prepare("INSERT INTO verification_logs (user_id, item_type, item_id, verification_level) VALUES (?, ?, ?, ?)");
     $log_stmt->execute([$user['user_id'], $item_type, $item_id, $verification_level]);
 
     $conn->commit();
-    sendResponse(["status" => "success", "message" => "Verification level updated"]);
+    sendResponse(["status" => "success", "message" => "ভেরিফিকেশন লেভেল সফলভাবে আপডেট করা হয়েছে।"]);
 
 } catch (PDOException $e) {
     if ($conn->inTransaction()) $conn->rollBack();
