@@ -51,7 +51,7 @@ try {
     $contributorId = $contribution['user_id'];
 
     if ($actionType === 'edit') {
-        $status = 'KKKKKK';
+
         // Handle Edit Request
         if ($action === 'approve') {
             $stmtEdit = $conn->prepare("SELECT changes FROM edit_requests WHERE item_type = ? AND item_id = ? AND status = 'pending' LIMIT 1");
@@ -69,7 +69,7 @@ try {
                     }
                     $params[] = $item_id;
                     $updateSql = "UPDATE $tableName SET " . implode(", ", $setClauses) . " WHERE id = ?";
-                    $status = $updateSql;
+              
                     $stmtUpdate = $conn->prepare($updateSql);
                     $stmtUpdate->execute($params);
                 }
