@@ -49,7 +49,7 @@ if ($filter_pick_point !== 'All') {
     $query .= " WHERE pick_point = ?";
     $params[] = $filter_pick_point;
 }
-$query .= " ORDER BY id friend_name ASC";
+$query .= " ORDER BY friend_name ASC";
 
 $stmt = $conn->prepare($query);
 $stmt->execute($params);
