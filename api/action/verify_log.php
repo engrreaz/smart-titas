@@ -51,13 +51,13 @@ if (!in_array($status, $allowed_status)) {
 
 // SQL
 $sql = "INSERT INTO verification_logs 
-        (verified_by, item_type, item_id, verify_val, device_id) 
-        VALUES (?, ?, ?, ?, ?)";
+        (verified_by, item_type, item_id, verify_val) 
+        VALUES (?, ?, ?, ?)";
 
 try {
     $stmt = $conn->prepare($sql);
 
-    if ($stmt->execute([$user_id, $type, $item_id, $status, $device_id])) {
+    if ($stmt->execute([$user_id, $type, $item_id, $status])) {
         echo json_encode([
             "status" => "success",
             "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
