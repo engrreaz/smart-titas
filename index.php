@@ -233,7 +233,7 @@ $total_members_count = array_sum(array_column($friends, 'total_member'));
         <!-- Filter Options -->
         <div class="d-flex flex-wrap justify-content-center filter-nav mb-3">
             <?php foreach($points as $point): ?>
-                <a href="?pick_point=<?= urlencode($point) ?>" class="nav-link text-decoration-none <?= $filter_pick_point == $point ? 'active' : '' ?>" ‍style="font-size: 0.5rem;">
+                <a href="?pick_point=<?= urlencode($point) ?>" class="nav-link text-decoration-none <?= $filter_pick_point == $point ? 'active' : '' ?>" ‍style="font-size: 9px;">
                     <?= $point ?>
                 </a>
             <?php endforeach; ?>
