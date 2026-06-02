@@ -4,6 +4,8 @@ require_once '../jwt_helper.php';
 
 // লগ যাতে দেখা যায় ফাইলটি আদৌ হিট করছে কি না
 error_log("verify.php triggered at " . date('Y-m-d H:i:s'));
+  sendResponse(["status" => "success", "message" => "Method Not Allowed"]);
+  exit;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
