@@ -14,7 +14,7 @@ $deviceId = $_POST['device_id'] ?? null;
 $jd = json_decode($jsonData, true);
 $jdd = implode(", ", array_keys($jd));
 $allData = $type . ": " . $jdd . ", Device ID: " . $deviceId;
-
+  sendResponse(["status" => "error", "message" => "$allData Missing type or data"]);
 
 if (!$type || !$jsonData) {
     http_response_code(400);
