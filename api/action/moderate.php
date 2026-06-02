@@ -19,7 +19,7 @@ if (!$item_type || !$item_id || !$action) {
 }
 
 $dt = $item_type . ": " . $item_id . ", Action: " . $action . ", Device ID: " . $deviceId;
-sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' . $dt]);
+sendResponse(["status" => "error", "message" => $dt]);
 exit;
 
 try {
