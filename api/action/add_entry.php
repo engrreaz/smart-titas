@@ -10,12 +10,6 @@ $type = $_POST['type'] ?? null;
 $jsonData = $_POST['data'] ?? null;
 $deviceId = $_POST['device_id'] ?? null;
 
-
-$jd = json_decode($jsonData, true);
-$jdd = implode(", ", array_keys($jd));
-$allData = $type . ": " . $jdd . ", Device ID: " . $deviceId;
-  sendResponse(["status" => "error", "message" => "$allData Missing type or data"]);
-
 if (!$type || !$jsonData) {
     http_response_code(400);
     sendResponse(["status" => "error", "message" => "Missing type or data"]);
@@ -57,7 +51,6 @@ try {
     $stmt->execute($values);
     $itemId = $conn->lastInsertId();
 
-   
     // Log in contributions table
     $stmtLog = $conn->prepare("INSERT INTO contributions (user_id, item_type, item_id, action_type, status) VALUES (?, ?, ?, 'add', 'pending')");
     $stmtLog->execute([$userId, $type, $itemId]);
@@ -68,6 +61,6 @@ try {
 } catch (Exception $e) {
     if ($conn->inTransaction()) $conn->rollBack();
     http_response_code(500);
-    sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' .$allData]);
+    sendResponse(["status" => "error", "message" => $e->getMessage()]);
 }
 ?>
