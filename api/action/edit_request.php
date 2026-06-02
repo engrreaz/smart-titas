@@ -25,6 +25,8 @@ $deviceId = $input['device_id'] ?? null;
 // প্রাপ্ত সব ডাটা লগে লিখে রাখা (আপনার api/action/debug.log ফাইলটি চেক করুন)
 error_log("Input Data: type=$type, itemId=$itemId, changes=" . (is_array($changesJson) ? json_encode($changesJson) : $changesJson));
 
+error_log(json_decode($changesJson) ? "Valid JSON in changes" : "Invalid JSON in changes");
+
 if (!$type || !$itemId || !$changesJson) {
     error_log("Validation failed: Missing parameters");
     http_response_code(400);
