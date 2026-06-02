@@ -57,7 +57,7 @@ error_log("Database transaction started for verification update.");
     $stmt->execute([$verification_level, $item_id]);
 error_log("Verification level updated in $item_type for ID: $item_id. Affected rows: " . $stmt->rowCount());
     // Insert into verification_logs for history
-    $log_stmt = $conn->prepare("INSERT INTO verification_logs (user_id, item_type, item_id, verification_level) VALUES (?, ?, ?, ?)");
+    $log_stmt = $conn->prepare("INSERT INTO verification_logs (verified_by, item_type, item_id, verification_level) VALUES (?, ?, ?, ?)");
     $log_stmt->execute([$user['user_id'], $item_type, $item_id, $verification_level]);
     $conn->commit();
     sendResponse(["status" => "success", "message" => "ভেরিফিকেশন লেভেল সফলভাবে আপডেট করা হয়েছে।"]);
