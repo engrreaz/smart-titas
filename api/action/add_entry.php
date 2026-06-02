@@ -57,9 +57,10 @@ try {
     $stmt->execute($values);
     $itemId = $conn->lastInsertId();
 
+   
     // Log in contributions table
     $stmtLog = $conn->prepare("INSERT INTO contributions (user_id, item_type, item_id, action_type, status) VALUES (?, ?, ?, 'add', 'pending')");
-    $stmtLog->execute([$userId, $type, $itemId, 'add']);
+    $stmtLog->execute([$userId, $type, $itemId]);
 
     $conn->commit();
     sendResponse(["status" => "success", "message" => "Entry submitted for approval"]);
