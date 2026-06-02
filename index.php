@@ -271,7 +271,7 @@ $total_members_count = array_sum(array_column($friends, 'total_member'));
                                     </button>
                                 </div>
                                 <p class="card-text mb-1" style="font-size: 0.85rem;">
-                                    <i class="bi bi-telephone-fill text-muted me-1"></i> <?= htmlspecialchars($friend['mobile_no']) ?>
+                                    <i class="bi bi-telephone-fill text-muted me-1"></i> <a href="tel:<?= htmlspecialchars($friend['mobile_no']) ?>" class="text-decoration-none fw-medium" style="color: inherit;"><?= htmlspecialchars($friend['mobile_no']) ?></a>
                                 </p>
                                 <p class="card-text mb-1" style="font-size: 0.85rem;">
                                     <i class="bi bi-geo-alt-fill text-muted me-1"></i> <?= htmlspecialchars($friend['address']) ?>
