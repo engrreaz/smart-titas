@@ -18,19 +18,19 @@ $user_id = $user ? $user['user_id'] : null;
 
 try {
     // সঠিক (Correct) ভোটের সংখ্যা গণনা
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM verification_logs WHERE item_type = ? AND item_id = ? AND status = 'correct'");
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM verification_logs WHERE item_type = ? AND item_id = ? AND verify_val = 'correct'");
     $stmt->execute([$type, $item_id]);
     $correct_count = (int)$stmt->fetchColumn();
 
     // ভুল (Incorrect) ভোটের সংখ্যা গণনা
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM verification_logs WHERE item_type = ? AND item_id = ? AND status = 'incorrect'");
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM verification_logs WHERE item_type = ? AND item_id = ? AND verify_val = 'incorrect'");
     $stmt->execute([$type, $item_id]);
     $incorrect_count = (int)$stmt->fetchColumn();
 
     // বর্তমান ইউজার যদি ভোট দিয়ে থাকেন তবে তার ভোট স্ট্যাটাস বের করা
     $user_vote = null;
     if ($user_id) {
-        $stmt = $conn->prepare("SELECT status FROM verification_logs WHERE item_type = ? AND item_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt = $conn->prepare("SELECT verify_val FROM verification_logs WHERE item_type = ? AND item_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute([$type, $item_id, $user_id]);
         $user_vote = $stmt->fetchColumn();
     }
