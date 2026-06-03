@@ -2,103 +2,47 @@
 require_once '../db.php';
 require_once '../jwt_helper.php';
 
-header('Content-Type: application/json');
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid request method"
-    ]);
-    exit;
+    http_response_code(405);
+    sendResponse(["status" => "error", "message" => "Method Not Allowed"]);
 }
 
-// JSON or POST input handle
-$input = json_decode(file_get_contents("php://input"), true);
-if (!is_array($input)) {
-    $input = $_POST;
-}
+$user = requireAuth();
+$user_id = $user['user_id'];
 
-// Input sanitize & validation
-$type = trim($input['type'] ?? '');
-$item_id = isset($input['item_id']) ? (int)$input['item_id'] : 0;
-$status = trim($input['status'] ?? '');
-$device_id = trim($input['device_id'] ?? '');
+$type = $_POST['type'] ?? '';
+$item_id = $_POST['item_id'] ?? 0;
+$vote = $_POST['status'] ?? ''; // অ্যাপ থেকে আসা ভোটের মান (correct/incorrect)
 
-error_log("Received verify_log: Type: $type, Item ID: $item_id, Status: $status, Device ID: $device_id");
+$type_map = [
+    'official' => 'officials',
+    'institution' => 'institutions',
+    'donor' => 'blood_donors',
+    'professional' => 'professionals',
+    'business' => 'businesses'
+];
+$normalized_type = $type_map[$type] ?? $type;
 
-// basic validation
-if ($type === '' || $item_id <= 0 || $status === '') {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Required fields missing"
-    ]);
-    exit;
-}
-
-// JWT verify
-$user = verifyJwtToken();
-$user_id = isset($user['user_id']) ? (int)$user['user_id'] : 0;
-
-// status whitelist (security)
-$allowed_status = ['correct', 'incorrect'];
-if (!in_array($status, $allowed_status)) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid status value"
-    ]);
-    exit;
+if (empty($normalized_type) || empty($item_id) || empty($vote)) {
+    sendResponse(["status" => "error", "message" => "Missing parameters"]);
 }
 
 try {
-    // Check if user already provided feedback for this item
-    $check_sql = "SELECT verify_val FROM verification_logs WHERE verified_by = ? AND item_type = ? AND item_id = ?";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->execute([$user_id, $type, $item_id]);
-    $existing_log = $check_stmt->fetch(PDO::FETCH_ASSOC);
+    // একই ইউজারের আগের ভোট থাকলে সেটি আপডেট হবে, অন্যথায় নতুন ইনসার্ট হবে
+    $stmt = $conn->prepare("SELECT id FROM verification_logs WHERE item_type = ? AND item_id = ? AND verified_by = ? AND verify_val != ''");
+    $stmt->execute([$normalized_type, $item_id, $user_id]);
+    $existing = $stmt->fetch();
 
-    if ($existing_log) {
-        if ($existing_log['verify_val'] === $status) {
-            echo json_encode([
-                "status" => "success",
-                "message" => "আপনি আগেই এই একই মতামত দিয়েছেন।"
-            ]);
-        } else {
-            $update_sql = "UPDATE verification_logs SET verify_val = ? WHERE verified_by = ? AND item_type = ? AND item_id = ?";
-            $update_stmt = $conn->prepare($update_sql);
-            if ($update_stmt->execute([$status, $user_id, $type, $item_id])) {
-                echo json_encode([
-                    "status" => "success",
-                    "message" => "আপনার মতামত আপডেট করা হয়েছে।"
-                ]);
-            } else {
-                echo json_encode([
-                    "status" => "error",
-                    "message" => "Database error during update",
-                    "debug" => $update_stmt->errorInfo()
-                ]);
-            }
-        }
+    if ($existing) {
+        $stmt = $conn->prepare("UPDATE verification_logs SET verify_val = ?, status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$vote, $existing['id']]);
     } else {
-        $insert_sql = "INSERT INTO verification_logs (verified_by, item_type, item_id, verify_val) VALUES (?, ?, ?, ?)";
-        $insert_stmt = $conn->prepare($insert_sql);
-        if ($insert_stmt->execute([$user_id, $type, $item_id, $status])) {
-            echo json_encode([
-                "status" => "success",
-                "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
-            ]);
-        } else {
-            echo json_encode([
-                "status" => "error",
-                "message" => "Database error during insert",
-                "debug" => $insert_stmt->errorInfo()
-            ]);
-        }
+        $stmt = $conn->prepare("INSERT INTO verification_logs (verified_by, item_type, item_id, verify_val, status) VALUES (?, ?, ?, ?, 'approved')");
+        $stmt->execute([$user_id, $normalized_type, $item_id, $vote]);
     }
+
+    sendResponse(["status" => "success", "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"]);
 } catch (PDOException $e) {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Database error",
-        "debug" => $e->getMessage()
-    ]);
+    sendResponse(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
 }
 ?>
