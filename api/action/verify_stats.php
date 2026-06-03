@@ -42,6 +42,7 @@ try {
         "incorrectCount" => $incorrect_count,
         "userVote" => $user_vote ?: null
     ]);
+    error_log("Sent response for type: $type, item_id: $item_id, correct: $correct_count, incorrect: $incorrect_count, user_vote: " . ($user_vote ?? 'null'));
 
 } catch (PDOException $e) {
     sendResponse(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
