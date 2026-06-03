@@ -7,7 +7,7 @@ $userId = $user['user_id'];
 error_log("User $userId is submitting a report");
 
 // Android sends via FormUrlEncoded
-$itemType = $_POST['item_type'] ?? null;
+$itemType = $_POST['type'] ?? null;
 $itemId = $_POST['item_id'] ?? null;
 $reason = $_POST['reason'] ?? null;
 $deviceId = $_POST['device_id'] ?? null;
