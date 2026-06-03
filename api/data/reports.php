@@ -5,6 +5,13 @@ require_once '../jwt_helper.php';
 // রেসপন্স সবসময় JSON ফরম্যাটে হওয়া নিশ্চিত করা
 header('Content-Type: application/json; charset=UTF-8');
 
+ echo json_encode([
+        "status" => "success", 
+        "message" => "Internal Server Error", 
+        "debug_info" => $e->getMessage()
+    ]);
+exit;
+
 try {
     error_log("Accessing reports.php");
     
