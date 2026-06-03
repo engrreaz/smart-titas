@@ -257,6 +257,16 @@ $total_members_count = array_sum(array_column($friends, 'total_member'));
             </div>
         </div>
 
+        <!-- Search Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="position-relative">
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3" style="color: var(--md-sys-color-primary);"></i>
+                    <input type="text" id="searchInput" class="form-control ps-5 rounded-pill shadow-sm py-2" placeholder="নাম, মোবাইল, ঠিকানা বা যেকোনো তথ্য দিয়ে খুঁজুন..." onkeyup="filterCards()" style="background-color: #fff; border: 1px solid var(--md-sys-color-surface-variant);">
+                </div>
+            </div>
+        </div>
+        
         <!-- Cards Grid -->
         <div class="row g-3">
             <?php if(count($friends) > 0): ?>
@@ -394,6 +404,20 @@ $total_members_count = array_sum(array_column($friends, 'total_member'));
             
             var modal = new bootstrap.Modal(document.getElementById('friendModal'));
             modal.show();
+        }
+
+        function filterCards() {
+            let filter = document.getElementById('searchInput').value.toLowerCase();
+            let cards = document.querySelectorAll('.row.g-3 > .col-12.col-md-6.col-lg-4');
+            
+            cards.forEach(function(card) {
+                let text = card.textContent.toLowerCase();
+                if (text.includes(filter)) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            });
         }
     </script>
 </body>
