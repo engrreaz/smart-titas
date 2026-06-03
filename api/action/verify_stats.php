@@ -38,9 +38,9 @@ try {
     // JSON রেসপন্স পাঠানো
     sendResponse([
         "status" => "success",
-        "correct_count" => $correct_count,
-        "incorrect_count" => $incorrect_count,
-        "user_vote" => $user_vote ?: null
+        "correctCount" => $correct_count,
+        "incorrectCount" => $incorrect_count,
+        "userVote" => $user_vote ?: null
     ]);
 
 } catch (PDOException $e) {
