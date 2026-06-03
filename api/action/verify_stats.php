@@ -38,7 +38,12 @@ try {
     error_log("User vote for type: $type, item_id: $item_id, user_id: $user_id: $user_vote");
 
     // JSON রেসপন্স পাঠানো
-   
+    sendResponse([
+        "status" => "success",
+        "correctCount" => $correct_count,
+        "incorrectCount" => $incorrect_count,
+        "userVote" => $user_vote ?: null
+    ]);
     error_log("Sent response for type: $type, item_id: $item_id, correct: $correct_count, incorrect: $incorrect_count, user_vote: " . ($user_vote ?? 'null'));
 
 } catch (PDOException $e) {
