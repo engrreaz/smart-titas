@@ -11,6 +11,7 @@ $itemType = $_POST['item_type'] ?? null;
 $itemId = $_POST['item_id'] ?? null;
 $reason = $_POST['reason'] ?? null;
 $deviceId = $_POST['device_id'] ?? null;
+error_log("Received report: item_type=$itemType, item_id=$itemId, reason=$reason, device_id=$deviceId");
 
 if (!$itemType || !$itemId || !$reason) {
     http_response_code(400);
