@@ -49,25 +49,50 @@ if (!in_array($status, $allowed_status)) {
     exit;
 }
 
-// SQL
-$sql = "INSERT INTO verification_logs 
-        (verified_by, item_type, item_id, verify_val) 
-        VALUES (?, ?, ?, ?)";
-
 try {
-    $stmt = $conn->prepare($sql);
+    // Check if user already provided feedback for this item
+    $check_sql = "SELECT verify_val FROM verification_logs WHERE verified_by = ? AND item_type = ? AND item_id = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->execute([$user_id, $type, $item_id]);
+    $existing_log = $check_stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($stmt->execute([$user_id, $type, $item_id, $status])) {
-        echo json_encode([
-            "status" => "success",
-            "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
-        ]);
+    if ($existing_log) {
+        if ($existing_log['verify_val'] === $status) {
+            echo json_encode([
+                "status" => "success",
+                "message" => "আপনি আগেই এই একই মতামত দিয়েছেন।"
+            ]);
+        } else {
+            $update_sql = "UPDATE verification_logs SET verify_val = ? WHERE verified_by = ? AND item_type = ? AND item_id = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            if ($update_stmt->execute([$status, $user_id, $type, $item_id])) {
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "আপনার মতামত আপডেট করা হয়েছে।"
+                ]);
+            } else {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Database error during update",
+                    "debug" => $update_stmt->errorInfo()
+                ]);
+            }
+        }
     } else {
-        echo json_encode([
-            "status" => "error",
-            "message" => "Database error",
-            "debug" => $stmt->errorInfo()
-        ]);
+        $insert_sql = "INSERT INTO verification_logs (verified_by, item_type, item_id, verify_val) VALUES (?, ?, ?, ?)";
+        $insert_stmt = $conn->prepare($insert_sql);
+        if ($insert_stmt->execute([$user_id, $type, $item_id, $status])) {
+            echo json_encode([
+                "status" => "success",
+                "message" => "ধন্যবাদ! আপনার মতামত গ্রহণ করা হয়েছে।"
+            ]);
+        } else {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Database error during insert",
+                "debug" => $insert_stmt->errorInfo()
+            ]);
+        }
     }
 } catch (PDOException $e) {
     echo json_encode([
