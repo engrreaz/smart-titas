@@ -35,6 +35,7 @@ try {
         $stmt->execute([$type, $item_id, $user_id]);
         $user_vote = $stmt->fetchColumn();
     }
+    error_log("User vote for type: $type, item_id: $item_id, user_id: $user_id: $user_vote");
 
     // JSON রেসপন্স পাঠানো
     sendResponse([
