@@ -30,6 +30,7 @@ try {
     // বর্তমান ইউজার যদি ভোট দিয়ে থাকেন তবে তার ভোট স্ট্যাটাস বের করা
     $user_vote = null;
     if ($user_id) {
+        error_log("SELECT verify_val FROM verification_logs WHERE item_type = '$type' AND item_id = $item_id AND verified_by = $user_id ORDER BY id DESC LIMIT 1");
         $stmt = $conn->prepare("SELECT verify_val FROM verification_logs WHERE item_type = ? AND item_id = ? AND verified_by = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute([$type, $item_id, $user_id]);
         $user_vote = $stmt->fetchColumn();
