@@ -6,6 +6,8 @@ require_once '../jwt_helper.php';
 $type = $_GET['type'] ?? '';
 $item_id = $_GET['item_id'] ?? 0;
 
+error_log("Received request for type: $type, item_id: $item_id");
+
 if (empty($type) || empty($item_id)) {
     sendResponse(["status" => "error", "message" => "Type and item_id are required"]);
 }
