@@ -5,10 +5,8 @@ require_once '../jwt_helper.php';
 $user = requireAuth();
 $userId = $user['user_id'];
 
-// Android sends data via FormUrlEncoded/Post fields
 $type = $_POST['type'] ?? null;
 $jsonData = $_POST['data'] ?? null;
-$deviceId = $_POST['device_id'] ?? null;
 
 if (!$type || !$jsonData) {
     http_response_code(400);
@@ -23,7 +21,6 @@ try {
         throw new Exception("Invalid JSON data");
     }
 
-    // Insert into specific table based on type
     $allowed_tables = [
         'official' => 'officials',
         'institution' => 'institutions',
@@ -31,7 +28,15 @@ try {
         'professional' => 'professionals',
         'business' => 'businesses',
         'tourism' => 'tourism_places',
-        'emergency' => 'emergency_contacts'
+        'emergency' => 'emergency_contacts',
+        'healthcare' => 'healthcare',
+        'bank_insurance' => 'bank_insurance',
+        'volunteer' => 'volunteers',
+        'rent_a_car' => 'rent_a_car',
+        'restaurant' => 'restaurants',
+        'market' => 'markets',
+        'our_titas' => 'our_titas',
+        'notable_person' => 'notable_persons'
     ];
 
     $tableName = $allowed_tables[$type] ?? null;
@@ -39,9 +44,7 @@ try {
         throw new Exception("Invalid entry type: " . $type);
     }
 
-    // Prepare dynamic query
-    $data['status'] = 'pending'; // All new entries are pending
-    if ($type == 'official') $data['created_by'] = $userId;
+    $data['status'] = 'pending'; 
     
     $columns = implode(", ", array_keys($data));
     $placeholders = implode(", ", array_fill(0, count($data), "?"));
@@ -51,12 +54,11 @@ try {
     $stmt->execute($values);
     $itemId = $conn->lastInsertId();
 
-    // Log in contributions table
     $stmtLog = $conn->prepare("INSERT INTO contributions (user_id, item_type, item_id, action_type, status) VALUES (?, ?, ?, 'add', 'pending')");
     $stmtLog->execute([$userId, $type, $itemId]);
 
     $conn->commit();
-    sendResponse(["status" => "success", "message" => "Entry submitted for approval"]);
+    sendResponse(["status" => "success", "message" => "Entry submitted for approval", "id" => $itemId]);
 
 } catch (Exception $e) {
     if ($conn->inTransaction()) $conn->rollBack();

@@ -11,17 +11,12 @@ if ($user['role'] !== 'moderator' && $user['role'] !== 'super_admin') {
 $item_type = $_POST['item_type'] ?? null;
 $item_id = $_POST['item_id'] ?? null;
 $action = $_POST['action'] ?? null; // 'approve' or 'reject'
-$deviceId = $_POST['device_id'] ?? null;
-
 
 if (!$item_type || !$item_id || !$action) {
     http_response_code(400);
     sendResponse(["status" => "error", "message" => "Missing parameters"]);
 }
 
-$dt = $item_type . ": " . $item_id . ", Action: " . $action . ", Device ID: " . $deviceId;
-
-error_log(json_decode($dt) ? "Valid JSON in changes" : "Invalid JSON in changes");
 try {
     $conn->beginTransaction();
 
@@ -34,7 +29,15 @@ try {
         'professional' => 'professionals',
         'business' => 'businesses',
         'tourism' => 'tourism_places',
-        'emergency' => 'emergency_contacts'
+        'emergency' => 'emergency_contacts',
+        'healthcare' => 'healthcare',
+        'bank_insurance' => 'bank_insurance',
+        'volunteer' => 'volunteers',
+        'rent_a_car' => 'rent_a_car',
+        'restaurant' => 'restaurants',
+        'market' => 'markets',
+        'our_titas' => 'our_titas',
+        'notable_person' => 'notable_persons'
     ];
 
     $tableName = $allowed_tables[$item_type] ?? null;
@@ -52,7 +55,6 @@ try {
     $contributorId = $contribution['user_id'];
 
     if ($actionType === 'edit') {
-
         // Handle Edit Request
         if ($action === 'approve') {
             $stmtEdit = $conn->prepare("SELECT changes FROM edit_requests WHERE item_type = ? AND item_id = ? AND status = 'pending' LIMIT 1");
@@ -70,13 +72,11 @@ try {
                     }
                     $params[] = $item_id;
                     $updateSql = "UPDATE $tableName SET " . implode(", ", $setClauses) . " WHERE id = ?";
-              
                     $stmtUpdate = $conn->prepare($updateSql);
                     $stmtUpdate->execute($params);
                 }
             }
         }
-        // Update edit_requests table
         $stmtUpdateEdit = $conn->prepare("UPDATE edit_requests SET status = ? WHERE item_type = ? AND item_id = ? AND status = 'pending'");
         $stmtUpdateEdit->execute([$status, $item_type, $item_id]);
 
@@ -88,14 +88,12 @@ try {
         }
     }
 
-    // Update contributions table status
     $stmtLog = $conn->prepare("UPDATE contributions SET status = ? WHERE item_type = ? AND item_id = ? AND status = 'pending'");
     $stmtLog->execute([$status, $item_type, $item_id]);
 
-    // Award Points for Approval
     if ($action === 'approve') {
         $points = ($actionType === 'edit') ? 5 : 10;
-        $stmtPoints = $conn->prepare("UPDATE users SET trust_score = trust_score + ?, total_contributions = total_contributions + 1 WHERE id = ?");
+        $stmtPoints = $conn->prepare("UPDATE users SET trust_score = trust_score + ? WHERE id = ?");
         $stmtPoints->execute([$points, $contributorId]);
     }
 
@@ -103,9 +101,8 @@ try {
     sendResponse(["status" => "success", "message" => "Item successfully " . $status]);
 
 } catch (Exception $e) {
-    if ($conn->inTransaction())
-        $conn->rollBack();
+    if ($conn->inTransaction()) $conn->rollBack();
     http_response_code(500);
-    sendResponse(["status" => "error", "message" => $e->getMessage() . ', ' . $dt]);
+    sendResponse(["status" => "error", "message" => $e->getMessage()]);
 }
 ?>
