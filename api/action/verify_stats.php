@@ -30,7 +30,7 @@ try {
     // বর্তমান ইউজার যদি ভোট দিয়ে থাকেন তবে তার ভোট স্ট্যাটাস বের করা
     $user_vote = null;
     if ($user_id) {
-        $stmt = $conn->prepare("SELECT verify_val FROM verification_logs WHERE item_type = ? AND item_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt = $conn->prepare("SELECT verify_val FROM verification_logs WHERE item_type = ? AND item_id = ? AND verified_by = ? ORDER BY id DESC LIMIT 1");
         $stmt->execute([$type, $item_id, $user_id]);
         $user_vote = $stmt->fetchColumn();
     }
@@ -42,7 +42,6 @@ try {
         "incorrectCount" => $incorrect_count,
         "userVote" => $user_vote ?: null
     ]);
-    error_log("Sent response for type: $type, item_id: $item_id, correct: $correct_count, incorrect: $incorrect_count, user_vote: " . ($user_vote ?? 'null'));
 
 } catch (PDOException $e) {
     sendResponse(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
