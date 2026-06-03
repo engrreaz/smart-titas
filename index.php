@@ -55,8 +55,16 @@ $stmt = $conn->prepare($query);
 $stmt->execute($params);
 $friends = $stmt->fetchAll();
 
-$total_friends_count = count($friends);
-$total_members_count = array_sum(array_column($friends, 'total_member'));
+if ($filter_pick_point === 'All') {
+    $calc_friends = array_filter($friends, function($f) {
+        return $f['pick_point'] !== 'Undefined';
+    });
+    $total_friends_count = count($calc_friends);
+    $total_members_count = array_sum(array_column($calc_friends, 'total_member'));
+} else {
+    $total_friends_count = count($friends);
+    $total_members_count = array_sum(array_column($friends, 'total_member'));
+}
 ?>
 <!DOCTYPE html>
 <html lang="bn">
