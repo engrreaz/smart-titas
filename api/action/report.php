@@ -4,6 +4,7 @@ require_once '../jwt_helper.php';
 
 $user = requireAuth();
 $userId = $user['user_id'];
+error_log("User $userId is submitting a report");
 
 // Android sends via FormUrlEncoded
 $itemType = $_POST['item_type'] ?? null;
